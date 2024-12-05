@@ -1,12 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
+using UnityEngine.UI;
 
 public class EnemyPathfinding : MonoBehaviour
 {
     // Refrences
     [Header("Refrences")]
     public UnityEngine.AI.NavMeshAgent agent;
+    public Animator animator;
+    public TextMeshProUGUI healthText;
     private GameObject player;
     [Space]
     public LayerMask playerMask;
@@ -63,6 +67,8 @@ public class EnemyPathfinding : MonoBehaviour
         playerInChaseRange = false;
         allowIdle = true;
 
+        healthText.text = "100% Health";
+
         // Setting enemy state to default
         state = EnemyState.patrolling;
 
@@ -80,19 +86,44 @@ public class EnemyPathfinding : MonoBehaviour
         UpdateStates();
 
         if (playerInChaseRange) { state = EnemyState.chasing; Chasing(); }
+
+        if (Input.GetKeyDown(KeyCode.K)) { 
+            animator.SetTrigger("death");
+            agent.enabled = false;
+
+            healthText.text = "0% Health";
+        }
     }
 
     public void UpdateStates()
     {
         // Checks if enemy is idle, if it is, return as the enemy doesn't need to do anything if it's idle
-        if (!allowIdle) { return; }
+        if (!allowIdle) 
+        { 
+            animator.SetBool("idle", true);
+            animator.SetBool("walking", false);
+            animator.SetBool("running", false);
+        }
 
         // Checks if the player is within the player chase range with radius playerChaseRadius
         playerInChaseRange = Physics.CheckSphere(transform.position, playerChaseRadius, playerMask);
 
         // If the player is in the chase range, start chasing. Else, start/continue patrolling
-        if (playerInChaseRange) { Chasing(); }
-        else { Patrolling(); }
+        if (playerInChaseRange) 
+        {
+            animator.SetBool("idle", false);
+            animator.SetBool("walking", false);
+            animator.SetBool("running", true);
+            Chasing(); 
+        }
+
+        else 
+        {
+            animator.SetBool("idle", false);
+            animator.SetBool("walking", true);
+            animator.SetBool("running", false);
+            Patrolling(); 
+        }
     }
 
     public void Patrolling()
